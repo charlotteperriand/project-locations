@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Project Map - A. Nil Sensu</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#ffffff!important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a}
+body{padding:1.5rem;margin:0 auto}
+.tip{position:absolute;pointer-events:none;opacity:0;background:#fff;border:1px solid #e0dfdb;border-radius:8px;padding:8px 12px;font-size:12px;color:#1a1a1a;max-width:220px;z-index:10;transition:opacity 0.15s;line-height:1.5}
+.tip b{font-weight:600;font-size:13px}
+@keyframes pp{0%{opacity:0.4;transform:scale(1)}100%{opacity:0;transform:scale(2.5)}}
+</style>
+</head>
+<body>
+<div style="position:relative">
+<div id="map" style="width:100%"></div>
+<div class="tip" id="t"></div>
+</div>
+<div id="leg" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:#888"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+var P=[
+{n:"Germany",lat:51.2,lng:9.5,r:"GITEC-IGIP / HafenCity University",y:"2019\u20132025",k:"KfW advisory, sustainability consultancy, ESG compliance, project management, M.Sc. Resource Efficiency",c:"green",sz:10,maj:1},
+{n:"Kazakhstan",lat:51.1,lng:71.4,r:"St. Regis Hotel Astana",y:"2015\u20132017",k:"$180M, BREEAM, design management, value engineering",c:"teal",sz:6,maj:1},
+{n:"Uganda",lat:0.3,lng:32.6,r:"US Embassy Kampala",y:"2018",k:"$110M, LEED Gold, OBO standards, material compliance",c:"teal",sz:6,maj:1},
+{n:"T\u00fcrkiye",lat:39.9,lng:32.9,r:"M.Sc. Architecture, hotel design",y:"2004\u20132015",k:"M.Sc. Architectural Design, hotel design, technical drawings, facade detailing, OBO compliance",c:"gray",sz:5,maj:0},
+{n:"Netherlands",lat:52.1,lng:4.3,r:"US Embassy",y:"2011\u20132015",k:"Technical drawings, OBO compliance",c:"gray",sz:4,maj:0},
+{n:"Russia",lat:55.8,lng:37.6,r:"US Embassy",y:"2011\u20132015",k:"Technical drawings, OBO compliance",c:"gray",sz:4,maj:0},
+{n:"Mauritania",lat:18.1,lng:-16,r:"US Embassy",y:"2011\u20132015",k:"Technical drawings, OBO compliance",c:"gray",sz:4,maj:0},
+{n:"Rwanda",lat:-1.9,lng:29.9,r:"KfW infrastructure",y:"2023\u20132025",k:"Sustainability guidelines, ESIA, climate-resilient design",c:"green",sz:5,maj:0},
+{n:"Egypt",lat:30,lng:31.2,r:"KfW infrastructure",y:"2023\u20132025",k:"Environmental compliance, ESMP, World Bank ESS",c:"green",sz:4,maj:0},
+{n:"Malawi",lat:-14,lng:33.8,r:"KfW infrastructure",y:"2023\u20132025",k:"Climate adaptation, flood shelters, school buildings",c:"green",sz:4,maj:0},
+{n:"Bangladesh",lat:23.7,lng:90.4,r:"KfW climate-resilient infrastructure",y:"2023\u20132025",k:"Cyclone shelters, ESIA, ESMP, climate adaptation, resilient design",c:"green",sz:5,maj:0},
+{n:"Qatar",lat:25.3,lng:51.5,r:"Aviation and port infrastructure",y:"2011\u20132015",k:"Technical documentation, quantity surveying",c:"gray",sz:4,maj:0},
+{n:"UAE",lat:24.5,lng:54.7,r:"Aviation and port infrastructure",y:"2011\u20132015",k:"Technical documentation, quantity surveying",c:"gray",sz:4,maj:0},
+{n:"Oman",lat:23.6,lng:58.5,r:"Muscat Airport",y:"2011\u20132015",k:"Airport technical drawings, architectural documentation",c:"gray",sz:4,maj:0}
+];
+var CC={"green":"#1D9E75","teal":"#0F6E56","gray":"#888780"};
+var LL={"green":"Sustainability and green building","teal":"LEED / BREEAM certified projects","gray":"Technical design and documentation"};
+var w=680,h=440;
+var svg=d3.select("#map").append("svg").attr("viewBox","0 0 "+w+" "+h).attr("width","100%");
+var proj=d3.geoMercator().center([39,26]).scale(285).translate([w/2,h/2]);
+var path=d3.geoPath(proj);
+var tip=document.getElementById("t");
+d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json").then(function(world){
+var land=topojson.feature(world,world.objects.land);
+svg.append("clipPath").attr("id","clip").append("rect").attr("x",0).attr("y",0).attr("width",w).attr("height",h);
+var g=svg.append("g").attr("clip-path","url(#clip)");
+g.append("path").datum(land).attr("d",path).attr("fill","#f0efe8").attr("stroke","#d3d1c7").attr("stroke-width",0.5);
+g.append("path").datum(d3.geoGraticule().step([15,15])()).attr("d",path).attr("fill","none").attr("stroke","#e8e7e3").attr("stroke-width",0.3);
+P.forEach(function(p,i){
+var xy=proj([p.lng,p.lat]);if(!xy)return;
+if(xy[0]<-20||xy[0]>w+20||xy[1]<-20||xy[1]>h+20)return;
+var col=CC[p.c];
+var gg=svg.append("g");
+if(p.maj){
+gg.append("circle").attr("cx",xy[0]).attr("cy",xy[1]).attr("r",p.sz+4).attr("fill","none").attr("stroke",col).attr("stroke-width",0.5).attr("opacity",0.35);
+gg.append("circle").attr("cx",xy[0]).attr("cy",xy[1]).attr("r",p.sz).attr("fill","none").attr("stroke",col).attr("stroke-width",1).attr("opacity",0.3).style("animation","pp 2.5s ease-out infinite").style("animation-delay",(i*0.4)+"s").style("transform-origin",xy[0]+"px "+xy[1]+"px");
+}
+var dot=gg.append("circle").attr("cx",xy[0]).attr("cy",xy[1]).attr("r",p.sz).attr("fill",col).attr("opacity",p.maj?0.9:0.7).style("cursor","pointer").style("transition","r 0.15s");
+dot.on("mouseenter",function(){
+d3.select(this).attr("r",p.sz+2);
+tip.innerHTML="<b>"+p.n+"</b><br>"+p.r+"<br><span style='color:#888'>"+p.y+"</span><br><span style='color:#888'>"+p.k+"</span>";
+tip.style.opacity="1";
+var mr=document.getElementById("map").getBoundingClientRect();
+var dx=xy[0]/w*mr.width;var dy=xy[1]/h*mr.height;
+tip.style.left=(dx+14)+"px";tip.style.top=(dy-20)+"px";
+if(dx>mr.width*0.55)tip.style.left=(dx-230)+"px";
+if(dy>mr.height*0.7)tip.style.top=(dy-80)+"px";
+});
+dot.on("mouseleave",function(){
+d3.select(this).attr("r",p.sz);
+tip.style.opacity="0";
+});
+});
+});
+var le=document.getElementById("leg");var seen={};
+P.forEach(function(p){if(seen[p.c])return;seen[p.c]=1;
+var d=document.createElement("div");d.style.cssText="display:flex;align-items:center;gap:5px";
+d.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:'+CC[p.c]+';display:inline-block"></span>'+LL[p.c];
+le.appendChild(d)});
+</script>
+</body>
+</html>
